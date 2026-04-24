@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>헐탁일당척 (2026)</title>
+    
+    <link rel="apple-touch-icon" href="logo.png">
+    <link rel="icon" type="image/png" href="logo.png">
+    
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <style>
+        body { font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif; background-color: #f0f2f5; margin: 0; padding: 0; color: #2c3e50; overflow-x: hidden; }
+        
+        /* [1] 로딩(스플래시) 화면 스타일 */
+        #splash {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: #e6ff80; 
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center; z-index: 9999;
+            transition: opacity 0.5s ease-out;
+        }
+        
+        /* 로고 이미지 아이콘 강조 스타일 */
+        #splash img { 
+            width: 240px; height: auto; 
+            border-radius: 40px; 
+            box-shadow: 0 15px 35px rgba(0,0,0,0.15); 
+            margin-bottom: 30px;
+            border: 4px solid #fff;
+        }
+
+        #splash .loader { 
+            border: 4px solid rgba(255, 255, 255, 0.3); 
+            border-top: 4px solid #ff0000; 
+            border-radius: 50%; width: 45px; height: 45px; 
+            animation: spin 1s linear infinite; 
+        }
+
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* [2] 메인 계산기 스타일 */
+        #main-app { display: none; padding: 15px; animation: fadeIn 0.8s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .container { max-width: 450px; margin: 20px auto; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        h2 { text-align: center; color: #1a73e8; border-bottom: 2px solid #1a73e8; padding-bottom: 10px; margin-bottom: 25px; font-size: 22px; }
+        
+        .input-box { background: #e8f0fe; padding: 20px; border-radius: 12px; margin-bottom: 15px; text-align: center; }
+        .input-label { font-weight: bold; display: block; margin-bottom: 10px; color: #1a73e8; }
+        input[type="number"] { width: 100%; padding: 15px; border: 2px solid #1a73e8; border-radius: 8px; font-size: 24px; text-align: center; box-sizing: border-box; font-weight: bold; color: #d93025; }
+        
+        .grid-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .opt-item { background: #fff; border: 1px solid #ddd; padding: 12px; border-radius: 8px; font-size: 13px; display: flex; align-items: center; cursor: pointer; }
+        .opt-item input { margin-right: 10px; width: 18px; height: 18px; cursor: pointer; }
+
+        .result-group { border-top: 1px dashed #ccc; padding-top: 15px; }
+        .res-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 15px; }
+        .res-row.sub { color: #666; font-size: 13px; padding-left: 15px; }
+        .res-row.bold { font-weight: bold; color: #1a73e8; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+        
+        .total-box { background: #fff9c4; padding: 18px; border-radius: 10px; margin-top: 15px; border: 1px solid #fbc02d; text-align: right; }
+        .total-label { display: block; margin-bottom: 8px; font-size: 16px; font-weight: bold; color: #333; text-align: left; }
+        .total-amount { color: #1a73e8; font-size: 28px; font-weight: 900; }
+        
+        .footer { font-size: 12px; color: #70757a; margin-top: 20px; line-height: 1.6; padding: 10px; background: #f8f9fa; border-radius: 8px; }
+    </style>
+</head>
+<body>
+
+    <div id="splash">
+        <img src="logo.png" alt="헐탁일당척 로고">
+        <div class="loader"></div>
+        <p style="color: #555; font-weight: bold; font-size: 14px; margin-top: 20px;">전고협 표준 지침 준수</p>
+    </div>
+
+    <div id="main-app">
+        <div class="container">
+            <h2>📱 헐탁일당척 (2026)</h2>
+            
+            <div class="input-box">
+                <label class="input-label">노무비 단가 (W)</label>
+                <input type="number" id="wVal" placeholder="금액 입력" oninput="calculate()" autofocus>
+            </div>
+
+            <div class="grid-options">
+                <label class="opt-item"><input type="checkbox" id="chkNP" checked onchange="calculate()"> 국민연금(4.75%)</label>
+                <label class="opt-item"><input type="checkbox" id="chkHI" checked onchange="calculate()"> 건강보험(3.595%)</label>
+                <label class="opt-item"><input type="checkbox" id="chkLT" checked onchange="calculate()"> 장기요양(13.14%)</label>
+                <label class="opt-item"><input type="checkbox" id="chkEI" checked onchange="calculate()"> 고용보험(0.9%)</label>
+            </div>
+
+            <div class="result-group">
+                <div class="res-row"><span>임금 (W/1.1)</span><span id="outC">0 원</span></div>
+                <div class="res-row sub"><span>- 구직자 소개요금 (임금 X 1%)</span><span id="outFeeB">0 원</span></div>
+                <div class="res-row sub"><span>- 구인자 소개요금 (임금 X 10%)</span><span id="outFeeA">0 원</span></div>
+                <div class="res-row bold"><span>소개요금 합계 (W X 10%)</span><span id="outFeeTotal">0 원</span></div>
+                
+                <div class="res-row sub" style="margin-top:10px;"><span>- 갑근세 (15만원 초과 시 2.7%)</span><span id="outITax">0 원</span></div>
+                <div class="res-row sub"><span>- 주민세 (갑근세의 10%)</span><span id="outRTax">0 원</span></div>
+                <div class="res-row bold"><span>원천징수세액 합계</span><span id="outTaxTotal" style="color:#d93025;">0 원</span></div>
+                
+                <div class="res-row" style="margin-top:10px;"><span>4대 보험료 합계</span><span id="outIns" style="color:#d93025;">0 원</span></div>
+                
+                <div class="total-box">
+                    <span class="total-label">소개요금기준 최대지급 가능금액</span>
+                    <span id="outFinal" class="total-amount">0 원</span>
+                </div>
+            </div>
+
+            <div class="footer">
+                * 임금 계산은 원 미만 반올림 처리<br>
+                * 구직자 소개요금은 원 미만 절삭, 세금 및 보험료는 각 항목별 계산치의 10원 미만 절삭<br>
+                * 본 계산기는 2026년 전고협 표준 조견표 산출 방식에 근거합니다.
+            </div>
+        </div>
+    </div>
+
+<script>
+    window.onload = function() {
+        setTimeout(function() {
+            const splash = document.getElementById('splash');
+            splash.style.opacity = '0';
+            setTimeout(function() {
+                splash.style.display = 'none';
+                document.getElementById('main-app').style.display = 'block';
+                document.getElementById('wVal').focus();
+            }, 500);
+        }, 1500);
+    };
+
+    function floor10(val) { return Math.floor(val / 10) * 10; }
+    function floor1(val) { return Math.floor(val); }
+    function round1(val) { return Math.round(val); }
+
+    function calculate() {
+        const wValInput = document.getElementById('wVal');
+        const w = parseFloat(wValInput.value) || 0;
+        
+        if(w === 0) {
+            reset();
+            return;
+        }
+
+        // 1. 임금 계산 (반올림 처리)
+        let c = round1(w / 1.1);
+        
+        // 2. 소개요금 계산
+        let feeTotal = floor10(w * 0.1); // 전체 소개요금 (단가의 10%, 10원미만 절삭)
+        let feeB = floor1(c * 0.01);     // 구직자 소개요금 (임금의 1%, 원 미만 절삭)
+        let feeA = feeTotal - feeB;      // 구인자 소개요금 (임금의 10%로 표기되나 실제로는 차액분)
+        
+        // 3. 세금 계산 (15만원 초과 기준)
+        let itax = (c > 150000) ? floor10((c - 150000) * 0.027) : 0;
+        let rtax = floor10(itax * 0.1);
+        let taxSum = itax + rtax;
+        
+        // 4. 보험료 계산
+        let np = document.getElementById('chkNP').checked ? floor10(c * 0.0475) : 0;
+        let hi = document.getElementById('chkHI').checked ? floor10(c * 0.03595) : 0;
+        let lt = document.getElementById('chkLT').checked ? floor10(hi * 0.1314) : 0;
+        let ei = document.getElementById('chkEI').checked ? floor10(c * 0.009) : 0;
+        let insSum = np + hi + lt + ei;
+        
+        // 5. 최종 지급액
+        let finalPay = c - feeB - taxSum - insSum;
+
+        document.getElementById('outC').innerText = c.toLocaleString() + " 원";
+        document.getElementById('outFeeA').innerText = feeA.toLocaleString() + " 원";
+        document.getElementById('outFeeB').innerText = feeB.toLocaleString() + " 원";
+        document.getElementById('outFeeTotal').innerText = feeTotal.toLocaleString() + " 원";
+        document.getElementById('outITax').innerText = itax.toLocaleString() + " 원";
+        document.getElementById('outRTax').innerText = rtax.toLocaleString() + " 원";
+        document.getElementById('outTaxTotal').innerText = taxSum.toLocaleString() + " 원";
+        document.getElementById('outIns').innerText = insSum.toLocaleString() + " 원";
+        document.getElementById('outFinal').innerText = finalPay.toLocaleString() + " 원";
+    }
+
+    function reset() {
+        const ids = ['outC','outFeeA','outFeeB','outFeeTotal','outITax','outRTax','outTaxTotal','outIns','outFinal'];
+        ids.forEach(id => document.getElementById(id).innerText = "0 원");
+    }
+</script>
+</body>
+</html>
