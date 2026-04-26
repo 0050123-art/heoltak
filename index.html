@@ -7,9 +7,7 @@
     
     <link rel="apple-touch-icon" href="logo.png">
     <link rel="icon" type="image/png" href="logo.png">
-    <link rel="apple-touch-icon" href="logo.png">
-<link rel="icon" href="logo.png">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -17,7 +15,6 @@
     <style>
         body { font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif; background-color: #f0f2f5; margin: 0; padding: 0; color: #2c3e50; overflow-x: hidden; }
         
-        /* [1] 로딩(스플래시) 화면 스타일 */
         #splash {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background-color: #e6ff80; 
@@ -26,7 +23,6 @@
             transition: opacity 0.5s ease-out;
         }
         
-        /* 로고 이미지 아이콘 강조 스타일 */
         #splash img { 
             width: 240px; height: auto; 
             border-radius: 40px; 
@@ -44,7 +40,6 @@
 
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* [2] 메인 계산기 스타일 */
         #main-app { display: none; padding: 15px; animation: fadeIn 0.8s ease-in; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
@@ -56,8 +51,13 @@
         input[type="number"] { width: 100%; padding: 15px; border: 2px solid #1a73e8; border-radius: 8px; font-size: 24px; text-align: center; box-sizing: border-box; font-weight: bold; color: #d93025; }
         
         .grid-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
-        .opt-item { background: #fff; border: 1px solid #ddd; padding: 12px; border-radius: 8px; font-size: 13px; display: flex; align-items: center; cursor: pointer; }
-        .opt-item input { margin-right: 10px; width: 18px; height: 18px; cursor: pointer; }
+        .opt-item { 
+            background: #fff; border: 1px solid #ddd; padding: 10px; border-radius: 8px; 
+            display: flex; flex-direction: column; cursor: pointer; justify-content: center;
+        }
+        .opt-header { display: flex; align-items: center; font-size: 13px; font-weight: bold; }
+        .opt-header input { margin-right: 8px; width: 16px; height: 16px; }
+        .opt-amount { font-size: 12px; color: #d93025; margin-left: 24px; margin-top: 4px; font-weight: bold; }
 
         .result-group { border-top: 1px dashed #ccc; padding-top: 15px; }
         .res-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 15px; }
@@ -89,10 +89,22 @@
             </div>
 
             <div class="grid-options">
-                <label class="opt-item"><input type="checkbox" id="chkNP" checked onchange="calculate()"> 국민연금(4.75%)</label>
-                <label class="opt-item"><input type="checkbox" id="chkHI" checked onchange="calculate()"> 건강보험(3.595%)</label>
-                <label class="opt-item"><input type="checkbox" id="chkLT" checked onchange="calculate()"> 장기요양(13.14%)</label>
-                <label class="opt-item"><input type="checkbox" id="chkEI" checked onchange="calculate()"> 고용보험(0.9%)</label>
+                <div class="opt-item">
+                    <label class="opt-header"><input type="checkbox" id="chkNP" checked onchange="calculate()"> 국민연금(4.75%)</label>
+                    <div id="valNP" class="opt-amount">0 원</div>
+                </div>
+                <div class="opt-item">
+                    <label class="opt-header"><input type="checkbox" id="chkHI" checked onchange="calculate()"> 건강보험(3.595%)</label>
+                    <div id="valHI" class="opt-amount">0 원</div>
+                </div>
+                <div class="opt-item">
+                    <label class="opt-header"><input type="checkbox" id="chkLT" checked onchange="calculate()"> 장기요양(13.14%)</label>
+                    <div id="valLT" class="opt-amount">0 원</div>
+                </div>
+                <div class="opt-item">
+                    <label class="opt-header"><input type="checkbox" id="chkEI" checked onchange="calculate()"> 고용보험(0.9%)</label>
+                    <div id="valEI" class="opt-amount">0 원</div>
+                </div>
             </div>
 
             <div class="result-group">
@@ -115,8 +127,9 @@
 
             <div class="footer">
                 * 임금 계산은 원 미만 반올림 처리<br>
-                * 구직자 소개요금은 원 미만 절삭, 세금 및 보험료는 각 항목별 계산치의 10원 미만 절삭<br>
-                * 본 계산기는 2026년 전고협 표준 조견표 산출 방식에 근거합니다.
+                * 구직자/구인자 소개요금은 원 미만 반올림 (합계 차이 발생 시 구인자 요금에서 보정)<br>
+                * 세금 및 보험료는 각 항목별 계산치의 10원 미만 절삭<br>
+                * 본 계산기는 2026년 전고협 표준 지침에 근거합니다.
             </div>
         </div>
     </div>
@@ -134,9 +147,15 @@
         }, 1500);
     };
 
-    function floor10(val) { return Math.floor(val / 10) * 10; }
-    function floor1(val) { return Math.floor(val); }
-    function round1(val) { return Math.round(val); }
+    // 원칙: 10원 미만 절삭 (부동소수점 오차 보정 위해 아주 미세한 값을 더한 후 절삭)
+    function floor10(val) { 
+        return Math.floor((val + 0.00001) / 10) * 10; 
+    }
+    
+    // 원칙: 원 미만 반올림
+    function round1(val) { 
+        return Math.round(val); 
+    }
 
     function calculate() {
         const wValInput = document.getElementById('wVal');
@@ -147,24 +166,33 @@
             return;
         }
 
-        // 1. 임금 계산 (반올림 처리)
+        // 1. 임금 (C) 계산 (원칙: 단가 / 1.1 후 원미만 반올림)
         let c = round1(w / 1.1);
         
-        // 2. 소개요금 계산
-        let feeTotal = floor10(w * 0.1); // 전체 소개요금 (단가의 10%, 10원미만 절삭)
-        let feeB = floor1(c * 0.01);     // 구직자 소개요금 (임금의 1%, 원 미만 절삭)
-        let feeA = feeTotal - feeB;      // 구인자 소개요금 (임금의 10%로 표기되나 실제로는 차액분)
+        // 2. 소개요금 계산 (조견표 일치 보정)
+        // 전체 소개요금은 단가의 10%를 반올림하여 산출
+        let targetTotalFee = round1(w * 0.1); 
+        let feeB = round1(c * 0.01);          
+        let feeA = targetTotalFee - feeB; // 차액을 구인자 소개요금으로 배정
         
-        // 3. 세금 계산 (15만원 초과 기준)
+        // 3. 세금 계산 (원칙: 10원 미만 절삭)
         let itax = (c > 150000) ? floor10((c - 150000) * 0.027) : 0;
         let rtax = floor10(itax * 0.1);
         let taxSum = itax + rtax;
         
-        // 4. 보험료 계산
+        // 4. 보험료 계산 (원칙: 각 항목별로 계산 후 10원 미만 절삭)
         let np = document.getElementById('chkNP').checked ? floor10(c * 0.0475) : 0;
         let hi = document.getElementById('chkHI').checked ? floor10(c * 0.03595) : 0;
         let lt = document.getElementById('chkLT').checked ? floor10(hi * 0.1314) : 0;
+        
+        // 고용보험: 275,000원 케이스 대응 (250,000 * 0.009 = 2,250)
         let ei = document.getElementById('chkEI').checked ? floor10(c * 0.009) : 0;
+        
+        document.getElementById('valNP').innerText = np.toLocaleString() + " 원";
+        document.getElementById('valHI').innerText = hi.toLocaleString() + " 원";
+        document.getElementById('valLT').innerText = lt.toLocaleString() + " 원";
+        document.getElementById('valEI').innerText = ei.toLocaleString() + " 원";
+        
         let insSum = np + hi + lt + ei;
         
         // 5. 최종 지급액
@@ -173,7 +201,7 @@
         document.getElementById('outC').innerText = c.toLocaleString() + " 원";
         document.getElementById('outFeeA').innerText = feeA.toLocaleString() + " 원";
         document.getElementById('outFeeB').innerText = feeB.toLocaleString() + " 원";
-        document.getElementById('outFeeTotal').innerText = feeTotal.toLocaleString() + " 원";
+        document.getElementById('outFeeTotal').innerText = targetTotalFee.toLocaleString() + " 원";
         document.getElementById('outITax').innerText = itax.toLocaleString() + " 원";
         document.getElementById('outRTax').innerText = rtax.toLocaleString() + " 원";
         document.getElementById('outTaxTotal').innerText = taxSum.toLocaleString() + " 원";
@@ -184,6 +212,8 @@
     function reset() {
         const ids = ['outC','outFeeA','outFeeB','outFeeTotal','outITax','outRTax','outTaxTotal','outIns','outFinal'];
         ids.forEach(id => document.getElementById(id).innerText = "0 원");
+        const valIds = ['valNP','valHI','valLT','valEI'];
+        valIds.forEach(id => document.getElementById(id).innerText = "0 원");
     }
 </script>
 </body>
