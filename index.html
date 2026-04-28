@@ -5,8 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>헐탁일당척 (2026)</title>
     
-    <link rel="apple-touch-icon" href="logo.png">
-    <link rel="icon" type="image/png" href="logo.png">
+    <link rel="apple-touch-icon" href="logo.png?v=1.1">
+    <link rel="icon" type="image/png" href="logo.png?v=1.1">
+    <link rel="shortcut icon" href="logo.png?v=1.1">
     
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -74,7 +75,7 @@
 <body>
 
     <div id="splash">
-        <img src="logo.png" alt="헐탁일당척 로고">
+        <img src="logo.png?v=1.1" alt="헐탁일당척 로고">
         <div class="loader"></div>
         <p style="color: #555; font-weight: bold; font-size: 14px; margin-top: 20px;">전고협 표준 지침 준수</p>
     </div>
@@ -147,12 +148,10 @@
         }, 1500);
     };
 
-    // 원칙: 10원 미만 절삭 (부동소수점 오차 보정 위해 아주 미세한 값을 더한 후 절삭)
     function floor10(val) { 
         return Math.floor((val + 0.00001) / 10) * 10; 
     }
     
-    // 원칙: 원 미만 반올림
     function round1(val) { 
         return Math.round(val); 
     }
@@ -166,26 +165,18 @@
             return;
         }
 
-        // 1. 임금 (C) 계산 (원칙: 단가 / 1.1 후 원미만 반올림)
         let c = round1(w / 1.1);
-        
-        // 2. 소개요금 계산 (조견표 일치 보정)
-        // 전체 소개요금은 단가의 10%를 반올림하여 산출
         let targetTotalFee = round1(w * 0.1); 
         let feeB = round1(c * 0.01);          
-        let feeA = targetTotalFee - feeB; // 차액을 구인자 소개요금으로 배정
+        let feeA = targetTotalFee - feeB; 
         
-        // 3. 세금 계산 (원칙: 10원 미만 절삭)
         let itax = (c > 150000) ? floor10((c - 150000) * 0.027) : 0;
         let rtax = floor10(itax * 0.1);
         let taxSum = itax + rtax;
         
-        // 4. 보험료 계산 (원칙: 각 항목별로 계산 후 10원 미만 절삭)
         let np = document.getElementById('chkNP').checked ? floor10(c * 0.0475) : 0;
         let hi = document.getElementById('chkHI').checked ? floor10(c * 0.03595) : 0;
         let lt = document.getElementById('chkLT').checked ? floor10(hi * 0.1314) : 0;
-        
-        // 고용보험: 275,000원 케이스 대응 (250,000 * 0.009 = 2,250)
         let ei = document.getElementById('chkEI').checked ? floor10(c * 0.009) : 0;
         
         document.getElementById('valNP').innerText = np.toLocaleString() + " 원";
@@ -195,7 +186,6 @@
         
         let insSum = np + hi + lt + ei;
         
-        // 5. 최종 지급액
         let finalPay = c - feeB - taxSum - insSum;
 
         document.getElementById('outC').innerText = c.toLocaleString() + " 원";
