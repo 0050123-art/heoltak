@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>일당 척 - 임금 계산기</title>
+    <style>
+        /* 깔끔한 화면 구성을 위한 스타일 */
+        body { font-family: 'Malgun Gothic', sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; background-color: #f9f9f9; }
+        .container { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: center; max-width: 400px; width: 100%; }
+        img { max-width: 200px; height: auto; margin-bottom: 20px; }
+        h1 { font-size: 1.5rem; color: #333; margin-bottom: 25px; }
+        input { width: 100%; padding: 10px; margin-bottom: 20px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; font-size: 1rem; }
+        .result-box { background: #f0f4f8; padding: 15px; border-radius: 10px; text-align: left; }
+        .result-item { display: flex; justify-content: space-between; margin-bottom: 10px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <img src="logo.png?v=1.1" alt="일당 척 로고">
+    
+    <h1>일당 척</h1>
+
+    <div style="text-align: left; margin-bottom: 8px;">일당을 입력하세요 (원):</div>
+    <input type="number" id="dailyWage" placeholder="예: 150000" oninput="calculate()">
+
+    <div class="result-box">
+        <div class="result-item">
+            <span>총 급여:</span>
+            <span id="totalDisplay">0 원</span>
+        </div>
+        </div>
+</div>
+
+<script>
+    function calculate() {
+        const wage = document.getElementById('dailyWage').value;
+        const totalDisplay = document.getElementById('totalDisplay');
+        
+        if (wage) {
+            // 천단위 콤마 표시
+            totalDisplay.innerText = Number(wage).toLocaleString() + " 원";
+        } else {
+            totalDisplay.innerText = "0 원";
+        }
+    }
+</script>
+
+</body>
+</html>
