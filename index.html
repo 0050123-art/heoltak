@@ -72,6 +72,10 @@
         .total-amount { color: #1a73e8; font-size: 28px; font-weight: 900; }
         
         .footer { font-size: 12px; color: #70757a; margin-top: 20px; line-height: 1.6; padding: 10px; background: #f8f9fa; border-radius: 8px; }
+        
+        /* 추가된 소득세 안내 주석 스타일 */
+        .tax-notice { color: #d93025; font-size: 12px; padding-left: 15px; margin-top: -4px; margin-bottom: 10px; display: none; font-weight: bold; text-align: left; }
+        #chkTax { margin-right: 5px; width: 15px; height: 15px; vertical-align: middle; }
     </style>
 </head>
 <body>
@@ -116,7 +120,16 @@
                 <div class="res-row sub"><span>- 구인자 소개요금 (임금 X 10%)</span><span id="outFeeA">0 원</span></div>
                 <div class="res-row bold"><span>소개요금 합계 (W X 10%)</span><span id="outFeeTotal">0 원</span></div>
                 
-                <div class="res-row sub" style="margin-top:10px;"><span>- 갑근세 (15만원 초과 시 2.7%)</span><span id="outITax">0 원</span></div>
+                <div class="res-row sub" style="margin-top:10px;">
+                    <span>
+                        <span id="taxDash">-</span>
+                        <input type="checkbox" id="chkTax" checked onchange="calculate()" style="display: none;">
+                        갑근세 (15만원 초과 시 2.7%)
+                    </span>
+                    <span id="outITax">0 원</span>
+                </div>
+                <div id="taxNotice" class="tax-notice">* 소득세액 1,000원 미만 부징수 적용 시 체크 해제</div>
+                
                 <div class="res-row sub"><span>- 주민세 (갑근세의 10%)</span><span id="outRTax">0 원</span></div>
                 <div class="res-row bold"><span>원천징수세액 합계</span><span id="outTaxTotal" style="color:#d93025;">0 원</span></div>
                 
@@ -151,7 +164,7 @@
         }, 1500);
     };
 
-    // 정밀 계산 로직 (수정 금지)
+    // 정밀 계산 로직
     function floor10(val) { 
         return Math.floor((val + 0.00001) / 10) * 10; 
     }
@@ -159,6 +172,8 @@
     function round1(val) { 
         return Math.round(val); 
     }
+
+    let lastRawItax = -1; // 금액 변경 감지용 변수
 
     function calculate() {
         const wValInput = document.getElementById('wVal');
@@ -174,7 +189,39 @@
         let feeB = round1(c * 0.01);          
         let feeA = targetTotalFee - feeB; 
         
-        let itax = (c > 150000) ? floor10((c - 150000) * 0.027) : 0;
+        // 기준 갑근세 계산 (10원 미만 절삭 전 상태)
+        let rawItax = (c > 150000) ? floor10((c - 150000) * 0.027) : 0;
+        
+        const chkTax = document.getElementById('chkTax');
+        const taxDash = document.getElementById('taxDash');
+        const taxNotice = document.getElementById('taxNotice');
+        
+        // 입력 금액이 바뀌어 세액 기준이 달라지면 체크박스를 기본값(체크됨)으로 초기화
+        if (rawItax !== lastRawItax) {
+            chkTax.checked = true;
+            lastRawItax = rawItax;
+        }
+        
+        // [핵심 조건 소스] 세액이 0원 초과 ~ 1000원 미만 발생 시에만 체크박스와 주석 표시
+        if (rawItax > 0 && rawItax < 1000) {
+            taxDash.style.display = 'none';
+            chkTax.style.style = 'inline-block';
+            chkTax.style.display = 'inline-block';
+            taxNotice.style.display = 'block';
+        } else {
+            // 그 외(0원이거나 1000원 이상)인 경우 기존 일당척 앱 화면 유지
+            taxDash.style.display = 'inline-block';
+            chkTax.style.display = 'none';
+            taxNotice.style.display = 'none';
+            chkTax.checked = true; 
+        }
+        
+        // 체크 해제 시 갑근세를 0원 처리하는 로직
+        let itax = rawItax;
+        if (rawItax > 0 && rawItax < 1000 && !chkTax.checked) {
+            itax = 0;
+        }
+        
         let rtax = floor10(itax * 0.1);
         let taxSum = itax + rtax;
         
@@ -208,6 +255,12 @@
         ids.forEach(id => document.getElementById(id).innerText = "0 원");
         const valIds = ['valNP','valHI','valLT','valEI'];
         valIds.forEach(id => document.getElementById(id).innerText = "0 원");
+        
+        document.getElementById('taxDash').style.display = 'inline-block';
+        document.getElementById('chkTax').style.display = 'none';
+        document.getElementById('chkTax').checked = true;
+        document.getElementById('taxNotice').style.display = 'none';
+        lastRawItax = -1;
     }
 </script>
 </body>
