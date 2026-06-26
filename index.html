@@ -153,7 +153,7 @@
     </div>
 
 <script>
-    // 스플래시 화면 제어
+    // 스플래시 화면 제어 (안내 문구를 위해 기존 1500ms에서 2500ms로 1초 연장)
     window.onload = function() {
         setTimeout(function() {
             const splash = document.getElementById('splash');
@@ -163,7 +163,7 @@
                 document.getElementById('main-app').style.display = 'block';
                 document.getElementById('wVal').focus();
             }, 500);
-        }, 1500);
+        }, 2500); 
     };
 
     // 정밀 계산 로직
