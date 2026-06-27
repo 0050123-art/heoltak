@@ -51,7 +51,9 @@
         
         .input-box { background: #e8f0fe; padding: 20px; border-radius: 12px; margin-bottom: 15px; text-align: center; }
         .input-label { font-weight: bold; display: block; margin-bottom: 10px; color: #1a73e8; }
-        input[type="number"] { width: 100%; padding: 15px; border: 2px solid #1a73e8; border-radius: 8px; font-size: 24px; text-align: center; box-sizing: border-box; font-weight: bold; color: #d93025; }
+        
+        /* 쉼표 입력을 위해 type="text" 인터페이스 적용 시 정렬 유지 */
+        input[type="text"] { width: 100%; padding: 15px; border: 2px solid #1a73e8; border-radius: 8px; font-size: 24px; text-align: center; box-sizing: border-box; font-weight: bold; color: #d93025; }
         
         .grid-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
         .opt-item { 
@@ -85,7 +87,7 @@
         <div class="loader"></div>
         <p style="color: #1a73e8; font-weight: bold; font-size: 13px; margin-top: 25px; line-height: 1.6; text-align: center; max-width: 340px; padding: 0 15px; word-break: keep-all;">
             본 계산기는 (사)전국고용서비스협회 2026년 보험료등 
-            공제 조견표 수치를  참고하여 개인적으로 제작한 앱 임.
+            공제 조견표 수치를 참고하여 개인적으로 제작한 앱 임.
         </p>
     </div>
 
@@ -95,7 +97,7 @@
             
             <div class="input-box">
                 <label class="input-label">노무비 단가 (W)</label>
-                <input type="number" id="wVal" placeholder="금액 입력" oninput="calculate()" autofocus>
+                <input type="text" id="wVal" placeholder="금액 입력" oninput="handleInput(this)" autofocus inputmode="numeric">
             </div>
 
             <div class="grid-options">
@@ -153,7 +155,6 @@
     </div>
 
 <script>
-    // 스플래시 화면 제어 (안내 문구를 위해 기존 1500ms에서 2500ms로 1초 연장)
     window.onload = function() {
         setTimeout(function() {
             const splash = document.getElementById('splash');
@@ -166,7 +167,6 @@
         }, 2500); 
     };
 
-    // 정밀 계산 로직
     function floor10(val) { 
         return Math.floor((val + 0.00001) / 10) * 10; 
     }
@@ -175,11 +175,30 @@
         return Math.round(val); 
     }
 
-    let lastRawItax = -1; // 금액 변경 감지용 변수
+    let lastRawItax = -1;
+
+    // 실시간으로 콤마를 찍어주고 계산을 호출하는 래퍼 함수
+    function handleInput(element) {
+        // 숫자 외 문자는 제거
+        let value = element.value.replace(/[^0-9]/g, '');
+        
+        // 세 자리마다 콤마 추가
+        if (value) {
+            element.value = Number(value).toLocaleString();
+        } else {
+            element.value = '';
+        }
+        
+        // 계산 함수 호출
+        calculate();
+    }
 
     function calculate() {
         const wValInput = document.getElementById('wVal');
-        const w = parseFloat(wValInput.value) || 0;
+        
+        // 콤마(,)를 완전히 제거한 순수 숫자 문자열을 가져와 파싱
+        let rawValue = wValInput.value.replace(/,/g, '');
+        const w = parseFloat(rawValue) || 0;
         
         if(w === 0) {
             reset();
@@ -191,34 +210,28 @@
         let feeB = round1(c * 0.01);          
         let feeA = targetTotalFee - feeB; 
         
-        // 기준 갑근세 계산 (10원 미만 절삭 전 상태)
         let rawItax = (c > 150000) ? floor10((c - 150000) * 0.027) : 0;
         
         const chkTax = document.getElementById('chkTax');
         const taxDash = document.getElementById('taxDash');
         const taxNotice = document.getElementById('taxNotice');
         
-        // 입력 금액이 바뀌어 세액 기준이 달라지면 체크박스를 기본값(체크됨)으로 초기화
         if (rawItax !== lastRawItax) {
             chkTax.checked = true;
             lastRawItax = rawItax;
         }
         
-        // [핵심 조건 소스] 세액이 0원 초과 ~ 1000원 미만 발생 시에만 체크박스와 주석 표시
         if (rawItax > 0 && rawItax < 1000) {
             taxDash.style.display = 'none';
-            chkTax.style.style = 'inline-block';
             chkTax.style.display = 'inline-block';
             taxNotice.style.display = 'block';
         } else {
-            // 그 외(0원이거나 1000원 이상)인 경우 기존 일당척 앱 화면 유지
             taxDash.style.display = 'inline-block';
             chkTax.style.display = 'none';
             taxNotice.style.display = 'none';
             chkTax.checked = true; 
         }
         
-        // 체크 해제 시 갑근세를 0원 처리하는 로직
         let itax = rawItax;
         if (rawItax > 0 && rawItax < 1000 && !chkTax.checked) {
             itax = 0;
