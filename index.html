@@ -61,7 +61,6 @@
         .input-box { background: #e8f0fe; padding: 20px; border-radius: 12px; margin-bottom: 15px; text-align: center; }
         .input-label { font-weight: bold; display: block; margin-bottom: 10px; color: #1a73e8; }
         
-        /* 쉼표 입력을 위해 type="text" 인터페이스 적용 시 정렬 유지 */
         input[type="text"] { width: 100%; padding: 15px; border: 2px solid #1a73e8; border-radius: 8px; font-size: 24px; text-align: center; box-sizing: border-box; font-weight: bold; color: #d93025; }
         
         .grid-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
@@ -84,7 +83,6 @@
         
         .footer { font-size: 12px; color: #70757a; margin-top: 20px; line-height: 1.6; padding: 10px; background: #f8f9fa; border-radius: 8px; }
         
-        /* 추가된 소득세 안내 주석 스타일 */
         .tax-notice { color: #d93025; font-size: 12px; padding-left: 15px; margin-top: -4px; margin-bottom: 10px; display: none; font-weight: bold; text-align: left; }
         #chkTax { margin-right: 5px; width: 15px; height: 15px; vertical-align: middle; }
     </style>
@@ -129,10 +127,10 @@
             </div>
 
             <div class="result-group">
-                <div class="res-row"><span>임금 (W/1.1)</span><span id="outC">0 원</span></div>
+                <div class="res-row"><span>임금 (C = W/1.1)</span><span id="outC">0 원</span></div>
                 <div class="res-row sub"><span>- 구직자 소개요금 (임금 X 1%)</span><span id="outFeeB">0 원</span></div>
                 <div class="res-row sub"><span>- 구인자 소개요금 (임금 X 10%)</span><span id="outFeeA">0 원</span></div>
-                <div class="res-row bold"><span>소개요금 합계 (W X 10%)</span><span id="outFeeTotal">0 원</span></div>
+                <div class="res-row bold"><span>소개요금 합계 (A + B)</span><span id="outFeeTotal">0 원</span></div>
                 
                 <div class="res-row sub" style="margin-top:10px;">
                     <span>
@@ -156,8 +154,8 @@
             </div>
 
             <div class="footer">
-                * 임금 계산은 원 미만 반올림 처리<br>
-                * 구직자/구인자 소개요금은 원 미만 반올림 (합계 차이 발생 시 구인자 요금에서 보정)<br>
+                * 임금 계산은 원 미만 절상 처리<br>
+                * 구인자 및 구직자 소개요금은 원 미만 절사 처리<br>
                 * 세금 및 보험료는 각 항목별 계산치의 10원 미만 절삭<br>
             </div>
         </div>
@@ -176,36 +174,35 @@
         }, 2500); 
     };
 
+    // 10원 미만 절삭 (원단위 버림)
     function floor10(val) { 
         return Math.floor((val + 0.00001) / 10) * 10; 
     }
     
-    function round1(val) { 
-        return Math.round(val); 
+    // 원 미만 절상 (올림)
+    function ceil1(val) { 
+        return Math.ceil(val - 0.00001); 
+    }
+
+    // 원 미만 절사 (버림)
+    function floor1(val) {
+        return Math.floor(val + 0.00001);
     }
 
     let lastRawItax = -1;
 
-    // 실시간으로 콤마를 찍어주고 계산을 호출하는 래퍼 함수
     function handleInput(element) {
-        // 숫자 외 문자는 제거
         let value = element.value.replace(/[^0-9]/g, '');
-        
-        // 세 자리마다 콤마 추가
         if (value) {
             element.value = Number(value).toLocaleString();
         } else {
             element.value = '';
         }
-        
-        // 계산 함수 호출
         calculate();
     }
 
     function calculate() {
         const wValInput = document.getElementById('wVal');
-        
-        // 콤마(,)를 완전히 제거한 순수 숫자 문자열을 가져와 파싱
         let rawValue = wValInput.value.replace(/,/g, '');
         const w = parseFloat(rawValue) || 0;
         
@@ -214,11 +211,19 @@
             return;
         }
 
-        let c = round1(w / 1.1);
-        let targetTotalFee = round1(w * 0.1); 
-        let feeB = round1(c * 0.01);          
-        let feeA = targetTotalFee - feeB; 
+        // 1. 임금 (C) = W / 1.1 (원 미만 절상)
+        let c = ceil1(w / 1.1);
+
+        // 2. 구인자 소개요금 (A) = 임금 X 10% (원 미만 절사)
+        let feeA = floor1(c * 0.1);
+
+        // 3. 구직자 소개요금 (B) = 임금 X 1% (원 미만 절사)
+        let feeB = floor1(c * 0.01);          
         
+        // 소개요금 합계 = A + B
+        let totalFee = feeA + feeB;
+        
+        // 4. 갑근세 = 150,000원 초과분 X 2.7% (10원 미만 절삭)
         let rawItax = (c > 150000) ? floor10((c - 150000) * 0.027) : 0;
         
         const chkTax = document.getElementById('chkTax');
@@ -226,10 +231,11 @@
         const taxNotice = document.getElementById('taxNotice');
         
         if (rawItax !== lastRawItax) {
-            chkTax.checked = true;
+            chkTax.checked = true; // 금액이 바뀌면 기본적으로 공제 체크됨 (디폴트 공제)
             lastRawItax = rawItax;
         }
         
+        // 1,000원 미만 소액부징수 옵션 노출 조건
         if (rawItax > 0 && rawItax < 1000) {
             taxDash.style.display = 'none';
             chkTax.style.display = 'inline-block';
@@ -243,16 +249,18 @@
         
         let itax = rawItax;
         if (rawItax > 0 && rawItax < 1000 && !chkTax.checked) {
-            itax = 0;
+            itax = 0; // 체크 해제 시 소액부징수 적용하여 0원 처리
         }
         
+        // 5. 주민세 = 갑근세 X 10% (10원 미만 절삭)
         let rtax = floor10(itax * 0.1);
         let taxSum = itax + rtax;
         
-        let np = document.getElementById('chkNP').checked ? floor10(c * 0.0475) : 0;
-        let hi = document.getElementById('chkHI').checked ? floor10(c * 0.03595) : 0;
-        let lt = document.getElementById('chkLT').checked ? floor10(hi * 0.1314) : 0;
-        let ei = document.getElementById('chkEI').checked ? floor10(c * 0.009) : 0;
+        // 6. 4대 보험료 계산 (각 항목별 10원 미만 절삭)
+        let np = document.getElementById('chkNP').checked ? floor10(c * 0.0475) : 0; // 국민연금 4.75%
+        let hi = document.getElementById('chkHI').checked ? floor10(c * 0.03595) : 0; // 건강보험 3.595%
+        let lt = document.getElementById('chkLT').checked ? floor10(hi * 0.1314) : 0;  // 장기요양 (건보료의 13.14%)
+        let ei = document.getElementById('chkEI').checked ? floor10(c * 0.009) : 0;   // 고용보험 0.9%
         
         document.getElementById('valNP').innerText = np.toLocaleString() + " 원";
         document.getElementById('valHI').innerText = hi.toLocaleString() + " 원";
@@ -261,12 +269,13 @@
         
         let insSum = np + hi + lt + ei;
         
+        // 7. 최대지급 가능금액 = 임금(C) - 구직자소개요금(B) - 원천세합계 - 보험료합계
         let finalPay = c - feeB - taxSum - insSum;
 
         document.getElementById('outC').innerText = c.toLocaleString() + " 원";
         document.getElementById('outFeeA').innerText = feeA.toLocaleString() + " 원";
         document.getElementById('outFeeB').innerText = feeB.toLocaleString() + " 원";
-        document.getElementById('outFeeTotal').innerText = targetTotalFee.toLocaleString() + " 원";
+        document.getElementById('outFeeTotal').innerText = totalFee.toLocaleString() + " 원";
         document.getElementById('outITax').innerText = itax.toLocaleString() + " 원";
         document.getElementById('outRTax').innerText = rtax.toLocaleString() + " 원";
         document.getElementById('outTaxTotal').innerText = taxSum.toLocaleString() + " 원";
