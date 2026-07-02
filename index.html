@@ -23,7 +23,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
     <style>
-        body { font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif; background-color: #f0f2f5; margin: 0; padding: 0; color: #2c3e50; overflow-x: hidden; scroll-behavior: smooth; }
+        body { font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif; background-color: #f0f2f5; margin: 0; padding: 0; color: #2c3e50; overflow-x: hidden; }
         
         /* 스플래시 화면 스타일 */
         #splash {
@@ -86,26 +86,20 @@
         .tax-notice { color: #d93025; font-size: 12px; padding-left: 15px; margin-top: -4px; margin-bottom: 10px; display: none; font-weight: bold; text-align: left; }
         #chkTax { margin-right: 5px; width: 15px; height: 15px; vertical-align: middle; }
 
-        /* 유의사항 관련 버튼 및 레이아웃 스타일 추가 */
-        .btn-notice-toggle {
-            display: block; width: 100%; text-align: center; background: #ffffff; border: 2px solid #333333; 
-            color: #000000; font-size: 20px; font-weight: bold; padding: 12px 0; border-radius: 8px; 
-            margin-top: 15px; cursor: pointer; letter-spacing: 2px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        }
+        /* => 유의사항 라인 스타일 */
+        .notice-link-row { text-align: center; margin-top: 20px; font-size: 16px; font-weight: bold; }
+        .notice-link-row span { color: #d93025; cursor: pointer; text-decoration: underline; padding: 5px 10px; }
+
+        /* 다음 장 유의사항 이미지 화면 스타일 */
+        #notice-page { display: none; padding: 15px; animation: fadeIn 0.5s ease-in; text-align: center; }
         
-        #notice-section { display: none; margin-top: 25px; animation: fadeIn 0.5s ease-in; }
+        .notice-wrapper { max-width: 450px; margin: 10px auto; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); box-sizing: border-box; }
         
-        .notice-container { max-width: 450px; margin: 0 auto 40px auto; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); box-sizing: border-box; position: relative; }
+        /* <= 계산기로 복귀 버튼 스타일 */
+        .btn-back { display: block; width: 100%; max-width: 200px; margin: 0 auto 15px auto; background: #ffffff; border: 2px solid #ff0000; color: #000000; font-size: 15px; font-weight: bold; padding: 8px 0; cursor: pointer; border-radius: 4px; }
         
-        .btn-goto-calc {
-            position: absolute; top: 20px; right: 20px; border: 2px solid #ff0000; color: #000000; 
-            font-size: 14px; font-weight: bold; padding: 4px 10px; background: #fff; cursor: pointer; text-decoration: none;
-        }
-        
-        .notice-title { font-size: 16px; font-weight: bold; color: #002060; text-align: center; margin-top: 25px; margin-bottom: 25px; line-height: 1.5; word-break: keep-all; }
-        .notice-subtitle { font-size: 14px; font-weight: bold; color: #0070c0; margin-top: 20px; margin-bottom: 8px; }
-        .notice-text { font-size: 12px; color: #002060; line-height: 1.6; margin: 0 0 10px 0; word-break: keep-all; }
-        .notice-text-indent { font-size: 12px; color: #002060; line-height: 1.6; margin: 0 0 5px 0; padding-left: 15px; word-break: keep-all; }
+        /* 이미지 맞춤 스타일 */
+        .notice-img { width: 100%; height: auto; display: block; border-radius: 5px; }
     </style>
 </head>
 <body>
@@ -120,7 +114,7 @@
     </div>
 
     <div id="main-app">
-        <div class="container" id="calc-top">
+        <div class="container">
             <h2>📱 헐탁일당척 (2026)</h2>
             
             <div class="input-box">
@@ -181,37 +175,16 @@
                 * 최대지급 가능금액은 10원 미만 반올림 처리<br>
             </div>
 
-            <button type="button" class="btn-notice-toggle" onclick="showNotice()">유의사항</button>
-        </div>
-
-        <div id="notice-section">
-            <div class="notice-container">
-                <button type="button" class="btn-goto-calc" onclick="scrollToCalc()">계산기로 이동</button>
-                
-                <div class="notice-title">건설일용근로자 임금 및 직업안정법상 소개요금 상한 안내표</div>
-                
-                <div class="notice-subtitle">[유의사항]</div>
-                <p class="notice-text">※ 본 계산기는 직업안정법 및 관계 법령에 따른 소개요금 상한과 임금 산정 예시를 안내하기 위한 참고용입니다.</p>
-                <p class="notice-text">※ 소개요금은 관계법령에서 정한 상한 범위 내에서 개별 직업소개사업자가 자율적으로 결정합니다.</p>
-                <p class="notice-text">※ 본 자료는 특정금액 또는 요율의 적용을 강제하거나 회원사간 가격을 통일하기 위한 목적이 아닙니다.</p>
-                <p class="notice-text">※ 법정 상한을 초과한 소개요금 징수는 관계법령에 따라 처벌 또는 행정처분의 대상이 될 수 있습니다.</p>
-                
-                <div class="notice-subtitle">[사업장 적용]</div>
-                <p class="notice-text">※ 사업장당면적용 : 상시 1인 이상의 근로자를 사용하는 모든 사업장 (개인 또는 법인)</p>
-                <p class="notice-text">※ 본 계산기의 수치는 건설일용근로자 사업장가입기준 8일 이상 근로 시 국민연금등 가입의무화에 따른 참고자료로 활용해주시고 금액 및 근로조건에 따라 차이가 있을 수 있습니다</p>
-                
-                <div class="notice-subtitle">[관련규정 : 소개요금고시 중]</div>
-                <p class="notice-text">가. 구인자에 대한 소개요금</p>
-                <p class="notice-text-indent">1) 고용기간이 3개월 미만인 경우 : 고용기간 중 지급하기로 한 임금의 100분의 30 이하 (건설일용의 경우에는 100분의 10 이하)</p>
-                <p class="notice-text">나. 구직자에 대한 소개요금</p>
-                <p class="notice-text-indent">1) 고용기간이 3개월 미만인 경우 : 고용기간 중 지급받기로 한 임금의 100분의 1 이하</p>
-                <p class="notice-text-indent">2) 구직자가 원하는 경우 구직자 소개요금은 현금영수증을 발행해야 합니다.</p>
-                <p class="notice-text" style="margin-top: 15px;">※ 구직자 소개요금은 구직자의 동의를 필요로 하오니 구직자의 동의를 꼭 받으시고 하시기 바랍니다.</p>
-                
-                <div class="notice-subtitle">[세액산출 기준]</div>
-                <p class="notice-text">▶ 갑근세 : 근로자 순수노임에서 한달이내 근무 한 일수 합친 금액에 150,000원 차감 후 남은 금액에 0.027을 곱해 산출 공제.</p>
-                <p class="notice-text">▶ 주민세 : 산출한 갑근세에 10%를 곱해 공제.</p>
+            <div class="notice-link-row">
+                <span onclick="goToNoticePage()">=> 유의사항</span>
             </div>
+        </div>
+    </div>
+
+    <div id="notice-page">
+        <div class="notice-wrapper">
+            <button class="btn-back" onclick="goToCalcPage()">&lt;= 계산기로 복귀</button>
+            <img src="안내표유의사항.jpg" alt="건설일용근로자 안내표 유의사항" class="notice-img">
         </div>
     </div>
 
@@ -228,20 +201,21 @@
         }, 2500); 
     };
 
-    // 유의사항 보기 및 화면 스크롤 함수
-    function showNotice() {
-        const noticeSection = document.getElementById('notice-section');
-        noticeSection.style.display = 'block';
-        noticeSection.scrollIntoView({ behavior: 'smooth' });
+    // 유의사항 페이지(다음 장)로 이동하는 함수
+    function goToNoticePage() {
+        document.getElementById('main-app').style.display = 'none';
+        document.getElementById('notice-page').style.display = 'block';
+        window.scrollTo(0, 0);
     }
 
-    // 계산기로 돌아가기 및 상단 입력창 포커스 함수
-    function scrollToCalc() {
-        const wValInput = document.getElementById('wVal');
-        document.getElementById('calc-top').scrollIntoView({ behavior: 'smooth' });
+    // 계산기 페이지로 복귀하는 함수
+    function goToCalcPage() {
+        document.getElementById('notice-page').style.display = 'none';
+        document.getElementById('main-app').style.display = 'block';
+        window.scrollTo(0, 0);
         setTimeout(function() {
-            wValInput.focus();
-        }, 400);
+            document.getElementById('wVal').focus();
+        }, 50);
     }
 
     // 10원 미만 절삭 (원단위 버림)
